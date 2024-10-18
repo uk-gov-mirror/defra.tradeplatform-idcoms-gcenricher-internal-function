@@ -1,4 +1,4 @@
-﻿	<Project Sdk="Microsoft.NET.Sdk">
+	<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -11,11 +11,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
 		<PackageReference Include="Defra.Trade.CrmAdapter.Api.V1.ApiClient" Version="2.3.6" />
 		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.1" />
+    <PackageReference Include="Defra.Trade.API.CertificatesStore.V1.ApiClient" Version="2.5.0" />
+    <PackageReference Include="Defra.Trade.Common.Function.Health" Version="4.0.6" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\Defra.Trade.Common.Function.Health\Defra.Trade.Common.Function.Health.csproj" />
-	  <ProjectReference Include="..\Defra.Trade.Events.EHCO.GCSubscriber.Infra\Defra.Trade.Events.EHCO.GCSubscriber.Infra.csproj" />
-	</ItemGroup>
-
 </Project>

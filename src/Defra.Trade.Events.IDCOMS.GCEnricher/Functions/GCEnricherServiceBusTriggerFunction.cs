@@ -4,9 +4,9 @@
 using Azure.Messaging.ServiceBus;
 using Defra.Trade.Common.Functions;
 using Defra.Trade.Common.Functions.Interfaces;
+using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Extensions;
-using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Logging;

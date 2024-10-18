@@ -12,12 +12,12 @@ using Defra.Trade.Common.Functions.Interfaces;
 using Defra.Trade.Common.Functions.Models;
 using Defra.Trade.Common.Functions.Services;
 using Defra.Trade.Common.Functions.Validation;
+using Defra.Trade.Common.Infra.Infrastructure;
 using Defra.Trade.Common.Security.Authentication;
 using Defra.Trade.Common.Security.Authentication.Interfaces;
 using Defra.Trade.CrmAdapter.Api.V1.ApiClient.Api;
-using Defra.Trade.Events.EHCO.GCSubscriber.Infra;
+using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
-using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models.Settings;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services.Contracts;
@@ -33,8 +33,11 @@ namespace Defra.Trade.Events.IDCOMS.GCEnricher.Infrastructure;
 [ExcludeFromCodeCoverage]
 public static class ServiceExtensions
 {
+    private static readonly string _crmApi = "/trade-crm-adapter/v1";
+
     public static IServiceCollection AddServiceRegistrations(this IServiceCollection services, IConfiguration configuration)
     {
+
         services.AddSingleton<ICustomValidatorFactory, CustomValidatorFactory>();
         services.AddSingleton<AbstractValidator<TradeEventMessageHeader>, GcEnrichmentMessageHeaderValidator>();
         services.AddSingleton<AbstractValidator<GcEnrichmentInbound>, GcEnrichmentInboundValidator>();
@@ -90,7 +93,7 @@ public static class ServiceExtensions
                 string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
                 var config = new CrmAdapter.Api.V1.ApiClient.Client.Configuration
                 {
-                    BasePath = $"{apimSettings.BaseUrl}{apimSettings.CmsAdapterApi}",
+                    BasePath = $"{apimSettings.BaseUrl}{_crmApi}",
                     DefaultHeaders = new Dictionary<string, string>
                     {
                         {"Authorization", authToken},
@@ -105,28 +108,32 @@ public static class ServiceExtensions
 
     private static IServiceCollection ConfigureGCStoreApi(this IServiceCollection services)
     {
-        services
-            .AddScoped((provider) =>
+        services.AddScoped(
+        (provider) =>
+        {
+            var authService = provider.GetService<IAuthenticationService>();
+            var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
+            string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
+            var config = new Configuration
             {
-                var authService = provider.GetService<IAuthenticationService>();
-                var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
-                string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
-                var config = new Configuration
+                BasePath =
+                 $"{apimSettings.BaseUrl}{apimSettings.DaeraInternalCertificateStoreApi}",
+                DefaultHeaders = new Dictionary<string, string>
                 {
-                    BasePath = $"{apimSettings.BaseUrl}{apimSettings.DaeraInternalCertificateStoreApi}",
-                    DefaultHeaders = new Dictionary<string, string>
+                    {"Authorization", authToken},
                     {
-                        {"Authorization", authToken},
-                        {apimSettings.SubscriptionKeyHeaderName, apimSettings.SubscriptionKey}
+                        apimSettings.SubscriptionKeyHeaderName,
+                        apimSettings.SubscriptionKey
                     }
-                };
-                return config;
-            })
-            .AddTransient<IEhcoGeneralCertificateApplicationApi>(provider =>
-                new EhcoGeneralCertificateApplicationApi(provider.GetService<Configuration>()))
-            .AddTransient<IIdcomsGeneralCertificateEnrichmentApi>(provider =>
-                new IdcomsGeneralCertificateEnrichmentApi(provider.GetService<Configuration>()))
-            .AddTransient<IMonitorApi>(provider => new MonitorApi(provider.GetService<Configuration>()));
+                }
+            };
+            return config;
+        }).AddTransient<IEhcoGeneralCertificateApplicationApi>(
+                provider => new EhcoGeneralCertificateApplicationApi(provider.GetService<Configuration>()))
+            .AddTransient<IHealthApi>(provider => new HealthApi(provider.GetService<Configuration>()))
+            .AddTransient<IIdcomsGeneralCertificateEnrichmentApi>(
+                provider => new IdcomsGeneralCertificateEnrichmentApi(provider.GetService<Configuration>()));
+
 
         return services;
     }

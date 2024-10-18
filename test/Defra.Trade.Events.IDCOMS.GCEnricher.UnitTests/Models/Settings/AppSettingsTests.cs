@@ -1,7 +1,7 @@
 ﻿// Copyright DEFRA (c). All rights reserved.
 // Licensed under the Open Government License v3.0.
 
-using Defra.Trade.Events.EHCO.GCSubscriber.Infra;
+using Defra.Trade.Common.Infra.Infrastructure;
 using Shouldly;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Models.Settings;

@@ -4,9 +4,9 @@
 using System.Diagnostics.CodeAnalysis;
 using Defra.Trade.Common.AppConfig;
 using Defra.Trade.Common.Function.Health.HealthChecks;
+using Defra.Trade.Common.Infra.Infrastructure;
 using Defra.Trade.Common.Security.Authentication.Infrastructure;
-using Defra.Trade.Events.EHCO.GCSubscriber.Infra;
-using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
+using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models.Settings;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Infrastructure;
 using FunctionHealthCheck;
@@ -24,6 +24,7 @@ public class Startup : FunctionsStartup
 {
     public static IConfiguration Configuration { get; private set; }
 
+    private static readonly string _crmApi = "/trade-crm-adapter/v1";
     public override void Configure(IFunctionsHostBuilder builder)
     {
         Configuration = builder.GetContext().Configuration;
@@ -50,7 +51,7 @@ public class Startup : FunctionsStartup
         var internalApimSettings = services.BuildServiceProvider().GetRequiredService<IOptions<InternalApimSettings>>();
         var serviceBusQueuesSettings = services.BuildServiceProvider().GetRequiredService<IOptions<ServiceBusQueuesSettings>>();
         string idcomsUserId = "f8f6570d-ebb9-e911-a970-000d3a29be4a";
-        builder.AddCrmAdapterHealthCheck<InternalApimSettings>(services.BuildServiceProvider(), $"{internalApimSettings.Value.CmsAdapterApi}", idcomsUserId);
+        builder.AddCrmAdapterHealthCheck<InternalApimSettings>(services.BuildServiceProvider(), $"{_crmApi}", idcomsUserId);
 
         builder.AddTradeInternalApiCheck<InternalApimSettings>(
             services.BuildServiceProvider(),

@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Defra.Trade.Common.Function.Health.HealthChecks.ApiCheck;
-using Defra.Trade.Events.EHCO.GCSubscriber.Infra;
+using Defra.Trade.Common.Infra.Infrastructure;
 
 namespace Defra.Trade.Common.Function.Health.HealthChecks;
 

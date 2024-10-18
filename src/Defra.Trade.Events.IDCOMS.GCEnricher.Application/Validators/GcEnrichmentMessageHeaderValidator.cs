@@ -4,6 +4,7 @@
 using Defra.Trade.Common.Functions.Models;
 using Defra.Trade.Common.Functions.Models.Enum;
 using Defra.Trade.Common.Functions.Validation;
+using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
 using FluentValidation;
 
