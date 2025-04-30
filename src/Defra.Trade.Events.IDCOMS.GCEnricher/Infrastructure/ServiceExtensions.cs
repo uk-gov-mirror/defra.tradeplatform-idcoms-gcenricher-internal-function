@@ -14,6 +14,7 @@ using Defra.Trade.Common.Functions.Services;
 using Defra.Trade.Common.Functions.Validation;
 using Defra.Trade.Common.Infra.Infrastructure;
 using Defra.Trade.Common.Security.Authentication;
+using Defra.Trade.Common.Security.Authentication.Infrastructure;
 using Defra.Trade.Common.Security.Authentication.Interfaces;
 using Defra.Trade.CrmAdapter.Api.V1.ApiClient.Api;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
@@ -85,56 +86,55 @@ public static class ServiceExtensions
 
     private static IServiceCollection ConfigureCrmAdapterApi(this IServiceCollection services)
     {
-        services
-            .AddScoped((provider) =>
-            {
-                var authService = provider.GetService<IAuthenticationService>();
-                var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
-                string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
-                var config = new CrmAdapter.Api.V1.ApiClient.Client.Configuration
-                {
-                    BasePath = $"{apimSettings.BaseUrl}{_crmApi}",
-                    DefaultHeaders = new Dictionary<string, string>
-                    {
-                        {"Authorization", authToken},
-                        {apimSettings.SubscriptionKeyHeaderName, apimSettings.SubscriptionKey}
-                    }
-                };
-                return config;
-            })
-            .AddTransient<IEnrichmentApi>(provider => new EnrichmentApi(provider.GetService<CrmAdapter.Api.V1.ApiClient.Client.Configuration>()));
+        services.AddTransient<IEnrichmentApi>(provider => new EnrichmentApi(CreateCrmAPIConfigurationSettings(provider)));
         return services;
     }
 
     private static IServiceCollection ConfigureGCStoreApi(this IServiceCollection services)
     {
-        services.AddScoped(
-        (provider) =>
-        {
-            var authService = provider.GetService<IAuthenticationService>();
-            var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
-            string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
-            var config = new Configuration
-            {
-                BasePath =
-                 $"{apimSettings.BaseUrl}{apimSettings.DaeraInternalCertificateStoreApi}",
-                DefaultHeaders = new Dictionary<string, string>
-                {
-                    {"Authorization", authToken},
-                    {
-                        apimSettings.SubscriptionKeyHeaderName,
-                        apimSettings.SubscriptionKey
-                    }
-                }
-            };
-            return config;
-        }).AddTransient<IEhcoGeneralCertificateApplicationApi>(
-                provider => new EhcoGeneralCertificateApplicationApi(provider.GetService<Configuration>()))
-            .AddTransient<IHealthApi>(provider => new HealthApi(provider.GetService<Configuration>()))
+    services.AddTransient<IEhcoGeneralCertificateApplicationApi>
+            (provider => new EhcoGeneralCertificateApplicationApi(CreateGCStoreConfigurationSettings(provider )))
+
+            .AddTransient<IHealthApi>(provider => new HealthApi(CreateGCStoreConfigurationSettings(provider)))
             .AddTransient<IIdcomsGeneralCertificateEnrichmentApi>(
-                provider => new IdcomsGeneralCertificateEnrichmentApi(provider.GetService<Configuration>()));
-
-
+                provider => new IdcomsGeneralCertificateEnrichmentApi(CreateGCStoreConfigurationSettings(provider)));
+   
         return services;
     }
+    
+    private static Configuration CreateGCStoreConfigurationSettings(IServiceProvider provider)
+    {
+        var authService = provider.GetService<IAuthenticationService>();
+        var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
+        string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
+        var config = new Configuration
+        {
+            BasePath = $"{apimSettings.BaseUrl}{apimSettings.DaeraInternalCertificateStoreApi}",
+            DefaultHeaders = new Dictionary<string, string>
+            {
+                { "Authorization", authToken },
+                { apimSettings.SubscriptionKeyHeaderName, apimSettings.SubscriptionKey }
+            }
+        };
+        return config;
+    }
+
+    private static CrmAdapter.Api.V1.ApiClient.Client.Configuration CreateCrmAPIConfigurationSettings(IServiceProvider provider)
+    {
+        var authService = provider.GetService<IAuthenticationService>();
+        var apimSettings = provider.GetService<IOptions<InternalApimSettings>>()!.Value;
+        string authToken = authService.GetAuthenticationHeaderAsync().Result.ToString();
+        var config = new CrmAdapter.Api.V1.ApiClient.Client.Configuration
+        {
+            BasePath = $"{apimSettings.BaseUrl}{_crmApi}",
+            DefaultHeaders = new Dictionary<string, string>
+            {
+                { "Authorization", authToken },
+                { apimSettings.SubscriptionKeyHeaderName, apimSettings.SubscriptionKey }
+            }
+        };
+        return config;
+    }
+
+
 }
