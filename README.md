@@ -6,6 +6,8 @@ To run this function, you will need a ./src/Defra.Trade.Events.IDCOMS.GCEnricher
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+        "FUNCTIONS_EXTENSION_VERSION": "~4",
+        "FUNCTIONS_INPROC_NET8_ENABLED": "1",
         "ServiceBus:ConnectionString": "<secret>",
         "ConfigurationServer:ConnectionString": "<secret>",
         "ConfigurationServer:TenantId": "<secret>"
