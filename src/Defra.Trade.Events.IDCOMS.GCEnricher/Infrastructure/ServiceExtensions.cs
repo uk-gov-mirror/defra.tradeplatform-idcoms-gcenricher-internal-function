@@ -88,9 +88,8 @@ public static class ServiceExtensions
 
     private static void AddClientApiServices(this IServiceCollection services)
     {
-        services
-            .ConfigureCrmAdapterApi()
-            .ConfigureGCStoreApi();
+        services.ConfigureCrmAdapterApi();
+        services.ConfigureGCStoreApi();
     }
 
     private static IServiceCollection ConfigureCrmAdapterApi(this IServiceCollection services)
@@ -99,16 +98,14 @@ public static class ServiceExtensions
         return services;
     }
 
-    private static IServiceCollection ConfigureGCStoreApi(this IServiceCollection services)
+    private static void ConfigureGCStoreApi(this IServiceCollection services)
     {
-    services.AddTransient<IEhcoGeneralCertificateApplicationApi>
-            (provider => new EhcoGeneralCertificateApplicationApi(CreateGCStoreConfigurationSettings(provider )))
-
-            .AddTransient<IHealthApi>(provider => new HealthApi(CreateGCStoreConfigurationSettings(provider)))
-            .AddTransient<IIdcomsGeneralCertificateEnrichmentApi>(
-                provider => new IdcomsGeneralCertificateEnrichmentApi(CreateGCStoreConfigurationSettings(provider)));
-   
-        return services;
+        services.AddTransient<IEhcoGeneralCertificateApplicationApi>(
+            provider => new EhcoGeneralCertificateApplicationApi(CreateGCStoreConfigurationSettings(provider)));
+        services.AddTransient<IHealthApi>(
+            provider => new HealthApi(CreateGCStoreConfigurationSettings(provider)));
+        services.AddTransient<IIdcomsGeneralCertificateEnrichmentApi>(
+            provider => new IdcomsGeneralCertificateEnrichmentApi(CreateGCStoreConfigurationSettings(provider)));
     }
     
     private static Configuration CreateGCStoreConfigurationSettings(IServiceProvider provider)

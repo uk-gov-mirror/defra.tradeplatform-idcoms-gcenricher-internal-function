@@ -125,4 +125,64 @@ public class SbMessageProcessorTests
 
         _mockMessageProcessor.Verify(x => x.ProcessMessage(mockedGcCommand, _messageHeader), Times.Once());
     }
+
+    [Fact]
+    public async Task ProcessAsync_WhenInternalServerError_AndContextSet_LogsAndRetries()
+    {
+        var receivedMessage = ServiceBusModelFactory.ServiceBusReceivedMessage(
+            body: BinaryData.FromString("{}"),
+            messageId: "msg-1");
+        var sender = new Mock<ServiceBusSender>();
+        var context = new Mock<IMessageRetryContext>();
+        context.SetupGet(c => c.Message).Returns(receivedMessage);
+        context.SetupGet(c => c.Queue).Returns(sender.Object);
+        _mockRetryAccessor.SetupGet(x => x.Context).Returns(context.Object);
+
+        var command = new GcEnrichmentRequest { GcId = "gc-1" };
+        var ex = new CrmAdapterClient.ApiException(500, "boom");
+        _mockMessageProcessor.Setup(x => x.ProcessMessage(command, _messageHeader)).Throws(ex);
+
+        await Assert.ThrowsAsync<CrmAdapterClient.ApiException>(
+            () => _sut.ProcessAsync(command, _messageHeader));
+
+        _mockLogger.VerifyLogged(
+            $"Processing failed for GC with ID : {command.GcId}. Retry count: 0",
+            LogLevel.Error);
+        sender.Verify(
+            s => s.ScheduleMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<DateTimeOffset>(), default),
+            Times.Once());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenServiceBusException_AndContextSet_LogsFailure()
+    {
+        var receivedMessage = ServiceBusModelFactory.ServiceBusReceivedMessage(
+            body: BinaryData.FromString("{}"),
+            messageId: "msg-2");
+        var sender = new Mock<ServiceBusSender>();
+        var context = new Mock<IMessageRetryContext>();
+        context.SetupGet(c => c.Message).Returns(receivedMessage);
+        context.SetupGet(c => c.Queue).Returns(sender.Object);
+        _mockRetryAccessor.SetupGet(x => x.Context).Returns(context.Object);
+
+        var command = new GcEnrichmentRequest { GcId = "gc-2" };
+        var ex = new ServiceBusException("transient", ServiceBusFailureReason.ServiceBusy);
+        _mockMessageProcessor.Setup(x => x.ProcessMessage(command, _messageHeader)).Throws(ex);
+
+        await _sut.ProcessAsync(command, _messageHeader);
+
+        _mockLogger.VerifyLogged(
+            $"Failed to send notification for GC with ID : {command.GcId}. Retry count: 0",
+            LogLevel.Error);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenNonInternalError_Throws()
+    {
+        var command = new GcEnrichmentRequest { GcId = "gc-3" };
+        var ex = new InvalidOperationException("nope");
+        _mockMessageProcessor.Setup(x => x.ProcessMessage(command, _messageHeader)).Throws(ex);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ProcessAsync(command, _messageHeader));
+    }
 }

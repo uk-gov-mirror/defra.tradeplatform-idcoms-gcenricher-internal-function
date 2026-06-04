@@ -38,7 +38,7 @@ builder.Services.ConfigureFunctionsApplicationInsights();
 var healthChecksBuilder = builder.Services.AddHealthChecks();
 RegisterHealthChecks(healthChecksBuilder, builder.Services, builder.Configuration);
 
-builder.Build().Run();
+await builder.Build().RunAsync();
 
 static void RegisterHealthChecks(
     IHealthChecksBuilder builder,
