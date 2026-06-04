@@ -3,15 +3,16 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Azure.Messaging.ServiceBus;
 using Defra.Trade.API.CertificatesStore.V1.ApiClient.Api;
 using Defra.Trade.API.CertificatesStore.V1.ApiClient.Client;
 using Defra.Trade.Common.Config;
-using Defra.Trade.Common.Functions;
-using Defra.Trade.Common.Functions.EventStore;
-using Defra.Trade.Common.Functions.Interfaces;
-using Defra.Trade.Common.Functions.Models;
-using Defra.Trade.Common.Functions.Services;
-using Defra.Trade.Common.Functions.Validation;
+using Defra.Trade.Common.Functions.Isolated;
+using Defra.Trade.Common.Functions.Isolated.EventStore;
+using Defra.Trade.Common.Functions.Isolated.Interfaces;
+using Defra.Trade.Common.Functions.Isolated.Models;
+using Defra.Trade.Common.Functions.Isolated.Services;
+using Defra.Trade.Common.Functions.Isolated.Validation;
 using Defra.Trade.Common.Infra.Infrastructure;
 using Defra.Trade.Common.Security.Authentication;
 using Defra.Trade.Common.Security.Authentication.Infrastructure;
@@ -28,6 +29,7 @@ using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Infrastructure;
 
@@ -63,6 +65,13 @@ public static class ServiceExtensions
         services.AddOptions<ServiceBusQueuesSettings>().Bind(configuration.GetSection(ServiceBusSettings.OptionsName));
         services.AddScoped<IServiceBusManagerClient, ServiceBusManagerClient>();
         services.AddSingleton<IQueueClientFactory, QueueClientFactory>();
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<ServiceBusQueuesSettings>>().Value;
+            return new ServiceBusClient(settings.ConnectionString);
+        });
+        services.AddSingleton(_ => new JsonSerializerSettings());
 
         var gcConfig = configuration.GetSection(GcEnricherSettings.GcEnricherSettingsSettingsName);
         services.AddOptions<GcEnricherSettings>().Bind(gcConfig);

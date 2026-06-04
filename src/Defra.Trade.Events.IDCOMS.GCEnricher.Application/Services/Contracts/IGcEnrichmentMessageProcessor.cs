@@ -1,7 +1,7 @@
 ﻿// Copyright DEFRA (c). All rights reserved.
 // Licensed under the Open Government License v3.0.
 
-using Defra.Trade.Common.Functions.Models;
+using Defra.Trade.Common.Functions.Isolated.Models;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services.Contracts;

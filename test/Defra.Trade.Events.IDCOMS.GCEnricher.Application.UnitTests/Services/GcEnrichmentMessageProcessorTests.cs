@@ -3,14 +3,14 @@
 
 using AutoFixture.AutoMoq;
 using AutoFixture.Idioms;
+using Azure.Messaging.ServiceBus;
 using Defra.Trade.API.CertificatesStore.V1.ApiClient.Api;
-using Defra.Trade.Common.Functions.Models;
+using Defra.Trade.Common.Functions.Isolated.Models;
 using Defra.Trade.CrmAdapter.Api.V1.ApiClient.Api;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services.Contracts;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Tests.Common;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Application.UnitTests.Services;
@@ -65,7 +65,7 @@ public class GcEnrichmentMessageProcessorTests
             LogLevel.Information);
 
         _serviceBusMessageClientMock.Verify(x =>
-            x.SendMessageAsync(It.IsAny<Message>()), Times.Once());
+            x.SendMessageAsync(It.IsAny<ServiceBusMessage>()), Times.Once());
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class GcEnrichmentMessageProcessorTests
             x.EnrichContactDetailsAsync(requestMessage.Applicant.DefraCustomer.UserId, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
 
         _serviceBusMessageClientMock.Verify(x =>
-            x.SendMessageAsync(It.IsAny<Message>()), Times.Never());
+            x.SendMessageAsync(It.IsAny<ServiceBusMessage>()), Times.Never());
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class GcEnrichmentMessageProcessorTests
         _enrichmentApi.Verify(x => x.EnrichContactDetailsAsync(requestMessage.Applicant.DefraCustomer.UserId, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         _enrichmentApi.Verify(x => x.EnrichTraderDetailsAsync(requestMessage.Applicant.DefraCustomer.OrgId, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         _serviceBusMessageClientMock.Verify(x =>
-            x.SendMessageAsync(It.IsAny<Message>()), Times.Never());
+            x.SendMessageAsync(It.IsAny<ServiceBusMessage>()), Times.Never());
     }
 
     [Fact]

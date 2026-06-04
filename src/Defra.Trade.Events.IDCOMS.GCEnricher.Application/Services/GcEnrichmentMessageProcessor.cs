@@ -6,9 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using AutoMapper;
+using Azure.Messaging.ServiceBus;
 using Defra.Trade.API.CertificatesStore.V1.ApiClient.Api;
 using Defra.Trade.API.CertificatesStore.V1.ApiClient.Model;
-using Defra.Trade.Common.Functions.Models;
+using Defra.Trade.Common.Functions.Isolated.Models;
 using Defra.Trade.CrmAdapter.Api.V1.ApiClient.Api;
 using Defra.Trade.CrmAdapter.Api.V1.ApiClient.Model;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
@@ -16,7 +17,6 @@ using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Extensions;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Helpers;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services.Contracts;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services;
@@ -103,26 +103,23 @@ public class GcEnrichmentMessageProcessor(
         _logger.SendingMessageToNotifierSuccess(_gcId);
     }
 
-    private static Message BuildMessage(GcEnrichmentRequest messageRequest, TradeEventMessageHeader messageHeader)
+    private static ServiceBusMessage BuildMessage(GcEnrichmentRequest messageRequest, TradeEventMessageHeader messageHeader)
     {
         var toSend = new GCNotifierPayload { GcId = messageRequest.GcId };
-        var messageToSend = new Message()
+        var messageToSend = new ServiceBusMessage(BinaryData.FromBytes(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(toSend, SerializerOptions.GetSerializerOptions()))))
         {
-            UserProperties = {
-               { "EntityKey", messageRequest.GcId},
-               { "CausationId", messageHeader.MessageId},
-               { "PublisherId", PublisherId},
-               { "SchemaVersion", SchemaVersion},
-               { "Status", Status},
-               { "Type", Type},
-               { "TimestampUtc", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString()}
-            },
             MessageId = Guid.NewGuid().ToString(),
             CorrelationId = messageHeader.CorrelationId,
             ContentType = ContentType,
-            Label = Label,
-            Body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(toSend, SerializerOptions.GetSerializerOptions()))
+            Subject = Label,
         };
+        messageToSend.ApplicationProperties.Add("EntityKey", messageRequest.GcId);
+        messageToSend.ApplicationProperties.Add("CausationId", messageHeader.MessageId);
+        messageToSend.ApplicationProperties.Add("PublisherId", PublisherId);
+        messageToSend.ApplicationProperties.Add("SchemaVersion", SchemaVersion);
+        messageToSend.ApplicationProperties.Add("Status", Status);
+        messageToSend.ApplicationProperties.Add("Type", Type);
+        messageToSend.ApplicationProperties.Add("TimestampUtc", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString());
         return messageToSend;
     }
 

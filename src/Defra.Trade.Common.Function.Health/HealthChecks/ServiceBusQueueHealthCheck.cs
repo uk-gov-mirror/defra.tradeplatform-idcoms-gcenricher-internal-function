@@ -2,71 +2,42 @@
 // Licensed under the Open Government License v3.0.
 
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
 namespace Defra.Trade.Common.Function.Health.HealthChecks;
 
 /// <summary>
-/// Health check for Trade Api,
+/// Health check for an Azure Service Bus queue connection.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class ServiceBusQueueHealthCheck : IHealthCheck
 {
-    private readonly string queueName;
-    private readonly string serviceBusConConfig;
+    private readonly string _queueName;
+    private readonly string _serviceBusConConfig;
+
     public ServiceBusQueueHealthCheck(string serviceBusConConfig, string queueName)
     {
-        this.queueName = queueName;
-        this.serviceBusConConfig = serviceBusConConfig;
+        _queueName = queueName;
+        _serviceBusConConfig = serviceBusConConfig;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        await Task.Delay(5, cancellationToken).ConfigureAwait(false);
-        var result = await ExecuteCheckAsync(context, cancellationToken);
-        return result;
-    }
-
-    private async Task<HealthCheckResult> ExecuteCheckAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        HealthCheckResult result;
         try
         {
-            result = await CheckHealthInternalAsync(context, cancellationToken);
+            await using var client = new ServiceBusClient(_serviceBusConConfig);
+            await using var sender = client.CreateSender(_queueName);
+            _ = client.FullyQualifiedNamespace;
+            return HealthCheckResult.Healthy($"{context.Registration.Name} Service bus connection successful.");
         }
         catch (OperationCanceledException)
         {
-            result = HealthCheckResult.Unhealthy("The health check operation timed out");
+            return HealthCheckResult.Unhealthy("The health check operation timed out");
         }
         catch (Exception ex)
         {
-            result = HealthCheckResult.Unhealthy($"Exception during check: {ex.GetType().FullName}", ex);
-        }
-
-        return result;
-    }
-
-#pragma warning disable IDE0060 // Remove unused parameter
-    protected Task<HealthCheckResult> CheckHealthInternalAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-#pragma warning restore IDE0060 // Remove unused parameter
-    {
-        try
-        {
-            string name = context.Registration.Name;
-            var client = CreateQueueClient(serviceBusConConfig);
-            _ = client.ServiceBusConnection.Endpoint;
-            return Task.FromResult(HealthCheckResult.Healthy($"{name} Service bus connection successful."));
-        }
-        catch (Exception ex)
-        {
-            var data = new Dictionary<string, object> { { "url", queueName + "/health" } };
-            return Task.FromResult(HealthCheckResult.Unhealthy($"Exception during check: {ex.GetType().FullName}", ex, data));
+            var data = new Dictionary<string, object> { { "url", _queueName + "/health" } };
+            return HealthCheckResult.Unhealthy($"Exception during check: {ex.GetType().FullName}", ex, data);
         }
     }
-
-    public IQueueClient CreateQueueClient(string connectionString)
-    {
-        return new QueueClient(connectionString, queueName, ReceiveMode.PeekLock, RetryExponential.Default);
-    }
-
 }

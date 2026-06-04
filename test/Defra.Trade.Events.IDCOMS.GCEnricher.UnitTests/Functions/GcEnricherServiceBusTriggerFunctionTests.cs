@@ -4,19 +4,17 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using Azure.Messaging.ServiceBus;
-using Defra.Trade.Common.Functions;
-using Defra.Trade.Common.Functions.Interfaces;
+using Defra.Trade.Common.Functions.Isolated;
+using Defra.Trade.Common.Functions.Isolated.Interfaces;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Functions;
 using Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.FunctionTestExtensions;
 using Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Helpers;
 using FakeItEasy;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.ServiceBus;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 using Times = Moq.Times;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Functions;
@@ -24,9 +22,11 @@ namespace Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Functions;
 public class GcEnricherServiceBusTriggerFunctionTests
 {
     private readonly GcEnricherServiceBusTriggerFunction _sut;
-    private readonly Mock<ILogger> _logger;
+    private readonly Mock<ILogger<GcEnricherServiceBusTriggerFunction>> _logger;
     private readonly Mock<IBaseMessageProcessorService<GcEnrichmentInbound>> _mockBaseMessageProcessorService;
     private readonly Mock<ServiceBusMessageActions> _mockServiceBusMessageActions;
+    private readonly Mock<ServiceBusClient> _mockServiceBusClient;
+    private readonly Mock<ServiceBusSender> _mockSender;
     private readonly IMessageRetryService _retry;
 
     public GcEnricherServiceBusTriggerFunctionTests()
@@ -34,30 +34,35 @@ public class GcEnricherServiceBusTriggerFunctionTests
         var fixture = new Fixture().Customize(new AutoMoqCustomization());
         _retry = A.Fake<IMessageRetryService>(opt => opt.Strict());
         _mockBaseMessageProcessorService = fixture.Freeze<Mock<IBaseMessageProcessorService<GcEnrichmentInbound>>>();
-        _logger = fixture.Freeze<Mock<ILogger>>();
+        _logger = fixture.Freeze<Mock<ILogger<GcEnricherServiceBusTriggerFunction>>>();
         _mockServiceBusMessageActions = new Mock<ServiceBusMessageActions>();
+        _mockSender = new Mock<ServiceBusSender>();
+        _mockServiceBusClient = new Mock<ServiceBusClient>();
+        _mockServiceBusClient.Setup(c => c.CreateSender(It.IsAny<string>())).Returns(_mockSender.Object);
 
-        _sut = fixture.Create<GcEnricherServiceBusTriggerFunction>();
+        _sut = new GcEnricherServiceBusTriggerFunction(
+            _mockBaseMessageProcessorService.Object,
+            _retry,
+            _mockServiceBusClient.Object,
+            _logger.Object);
     }
 
     [Fact]
     public void RunAsync_HasServiceBusTrigger_WithCorrectProperties()
     {
         FunctionTriggerAssertionHelpers.ShouldHaveServiceBusTrigger<GcEnricherServiceBusTriggerFunction>(
-            nameof(GcEnricherServiceBusTriggerFunction.RunAsync), GcEnricherSettings.DefaultQueueName, "ServiceBusConnectionString");
+            nameof(GcEnricherServiceBusTriggerFunction.RunAsync), GcEnricherSettings.DefaultQueueName, GcEnricherSettings.ConnectionStringConfigurationKey);
     }
 
     [Fact]
-    public void RunAsync_WhenTrigger_ShouldCallMessageProcessor()
+    public async Task RunAsync_WhenTrigger_ShouldCallMessageProcessor()
     {
-        // Arrange
         const string Json = "{}";
 
         var message = new ServiceBusReceivedMessageBuilder().WithBody(BinaryData.FromString(Json)).Build();
-
-        var executionContext = new Mock<ExecutionContext>();
-        var retryQueue = A.Fake<IAsyncCollector<ServiceBusMessage>>(opt => opt.Strict());
-        var setRetryContext = A.CallTo(() => _retry.SetContext(message, retryQueue));
+        var context = new Mock<FunctionContext>();
+        context.SetupGet(c => c.InvocationId).Returns("invocation-id");
+        var setRetryContext = A.CallTo(() => _retry.SetContext(message, A<ServiceBusSender>._));
 
         _mockBaseMessageProcessorService
             .Setup(x => x.ProcessAsync(
@@ -66,37 +71,31 @@ public class GcEnricherServiceBusTriggerFunctionTests
                 It.IsAny<string>(),
                 message,
                 _mockServiceBusMessageActions.Object,
-                It.IsAny<IAsyncCollector<ServiceBusMessage>>(),
-                It.IsAny<IAsyncCollector<ServiceBusMessage>>(),
+                It.IsAny<ServiceBusSender>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()
-            ))
+                It.IsAny<string>()))
             .ReturnsAsync(false)
             .Verifiable();
         setRetryContext.DoesNothing();
 
-        // Act
-        var result = _sut.RunAsync(message, _mockServiceBusMessageActions.Object, executionContext.Object, null, retryQueue, _logger.Object);
+        await _sut.RunAsync(message, _mockServiceBusMessageActions.Object, context.Object);
 
-        // Assert
-        _ = result.ShouldNotBeNull();
-        setRetryContext.MustNotHaveHappened();
-        result.Status.ShouldBe(TaskStatus.RanToCompletion);
+        setRetryContext.MustHaveHappened();
+        _mockBaseMessageProcessorService.Verify();
     }
 
     [Fact]
     public async Task RunAsync_WhenTriggeredWithInvalidMessage_ShouldThrowException()
     {
-        // Arrange
         const string Json = "invalid-json";
 
         var message = new ServiceBusReceivedMessageBuilder().WithBody(BinaryData.FromString(Json)).Build();
         var exception = new Exception();
-        var executionContext = new Mock<ExecutionContext>();
-        var retryQueue = A.Fake<IAsyncCollector<ServiceBusMessage>>(opt => opt.Strict());
-        var setRetryContext = A.CallTo(() => _retry.SetContext(message, retryQueue));
+        var context = new Mock<FunctionContext>();
+        context.SetupGet(c => c.InvocationId).Returns("invocation-id");
+        var setRetryContext = A.CallTo(() => _retry.SetContext(message, A<ServiceBusSender>._));
 
         _mockBaseMessageProcessorService.Setup(
             x => x.ProcessAsync(
@@ -105,18 +104,15 @@ public class GcEnricherServiceBusTriggerFunctionTests
                 It.IsAny<string>(),
                 It.IsAny<ServiceBusReceivedMessage>(),
                 It.IsAny<ServiceBusMessageActions>(),
-                It.IsAny<IAsyncCollector<ServiceBusMessage>>(),
-                It.IsAny<IAsyncCollector<ServiceBusMessage>>(),
+                It.IsAny<ServiceBusSender>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>())).Throws(exception);
         setRetryContext.DoesNothing();
 
-        // Act
-        await _sut.RunAsync(message, _mockServiceBusMessageActions.Object, executionContext.Object, null, retryQueue, _logger.Object);
+        await _sut.RunAsync(message, _mockServiceBusMessageActions.Object, context.Object);
 
-        // Assert
         _logger.Verify(
             l => l.Log(
                 It.Is<LogLevel>(level => level == LogLevel.Critical),
@@ -125,6 +121,5 @@ public class GcEnricherServiceBusTriggerFunctionTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Once);
-        setRetryContext.MustNotHaveHappened();
     }
 }

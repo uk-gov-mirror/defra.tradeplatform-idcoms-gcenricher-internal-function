@@ -3,7 +3,7 @@
 
 using System.Linq;
 using System.Reflection;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Shouldly;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.FunctionTestExtensions;

@@ -1,23 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 	</PropertyGroup>
 
 
 	<ItemGroup>
-		<PackageReference Include="AutoMapper" Version="13.0.1" />
-		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.1" />
-		<PackageReference Include="Defra.Trade.Common" Version="4.0.2" />
-		<PackageReference Include="Defra.Trade.Common.Infra" Version="2.1.0" />
-		<PackageReference Include="Defra.Trade.Common.Security" Version="3.0.1" />
-		<PackageReference Include="FunctionHealthCheck" Version="1.0.0" />
-		<PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-		<PackageReference Include="System.Net.Http" Version="4.3.4" />
+		<PackageReference Include="AutoMapper" Version="15.1.3" />
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+		<PackageReference Include="Defra.Trade.Common" Version="5.0.2" />
+		<PackageReference Include="Defra.Trade.Common.Infra" Version="3.0.1" />
+		<PackageReference Include="Defra.Trade.Common.Security" Version="4.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
 		<PackageReference Include="Defra.Trade.API.CertificatesStore.V1.ApiClient" Version="2.4.2" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.0" />
 		<PackageReference Include="Defra.Trade.CrmAdapter.Api.V1.ApiClient" Version="2.3.6" />
 		</ItemGroup>
 
