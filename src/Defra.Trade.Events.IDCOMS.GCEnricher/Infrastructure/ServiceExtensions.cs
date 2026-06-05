@@ -53,6 +53,7 @@ public static class ServiceExtensions
 
         services.AddEventStoreConfiguration();
 
+        services.AddTransient<ISchemaValidator, SchemaValidator>();
         services.AddTransient<IMessageProcessor<GcEnrichmentRequest, TradeEventMessageHeader>, SbMessageProcessor>();
         services.AddTransient<IInboundMessageValidator<GcEnrichmentInbound, TradeEventMessageHeader>,
             InboundMessageValidator<GcEnrichmentInbound, GcEnrichmentRequest, TradeEventMessageHeader>>();
