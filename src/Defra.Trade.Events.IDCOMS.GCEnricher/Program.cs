@@ -2,6 +2,7 @@
 // Licensed under the Open Government License v3.0.
 
 using Defra.Trade.Common.AppConfig;
+using Defra.Trade.Common.Function.Health.Extensions;
 using Defra.Trade.Common.Function.Health.HealthChecks;
 using Defra.Trade.Common.Infra.Infrastructure;
 using Defra.Trade.Common.Security.Authentication.Infrastructure;
@@ -45,21 +46,19 @@ static void RegisterHealthChecks(
     IServiceCollection services,
     IConfiguration configuration)
 {
-    const string crmApi = "/trade-crm-adapter/v1";
-
     builder.AddCheck<AppSettingHealthCheck>("ServiceBus:ConnectionString")
         .AddCheck<AppSettingHealthCheck>("Apim:Internal:BaseUrl");
 
     var sp = services.BuildServiceProvider();
     var internalApimSettings = sp.GetRequiredService<IOptions<InternalApimSettings>>();
     var serviceBusQueuesSettings = sp.GetRequiredService<IOptions<ServiceBusQueuesSettings>>();
-    const string idcomsUserId = "f8f6570d-ebb9-e911-a970-000d3a29be4a";
-    builder.AddCrmAdapterHealthCheck<InternalApimSettings>(sp, $"{crmApi}", idcomsUserId);
 
-    builder.AddTradeInternalApiCheck<InternalApimSettings>(
-        sp,
-        $"{internalApimSettings.Value.DaeraInternalCertificateStoreApi}{internalApimSettings.Value.DaeraInternalCertificateStoreApiHealthEndpoint}");
+    builder.AddDynamicsCheck(sp);
 
-    builder.AddAzureServiceBusCheck(configuration, "ServiceBus:ConnectionString", GcEnricherSettings.DefaultQueueName);
-    builder.AddAzureServiceBusCheck(configuration, "ServiceBus:ConnectionString", serviceBusQueuesSettings.Value.QueueNameEhcoRemosNotification);
+    builder.AddTradeApiHealthCheck(
+        internalApimSettings.Value.DaeraInternalCertificateStoreApiHealthEndpoint,
+        "CertificateStoreApi");
+
+    builder.AddAzureServiceBusQueueCheck(serviceBusQueuesSettings.Value, GcEnricherSettings.DefaultQueueName);
+    builder.AddAzureServiceBusQueueCheck(serviceBusQueuesSettings.Value, serviceBusQueuesSettings.Value.QueueNameEhcoRemosNotification);
 }

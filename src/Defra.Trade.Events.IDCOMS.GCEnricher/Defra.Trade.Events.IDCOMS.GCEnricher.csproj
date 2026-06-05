@@ -23,11 +23,11 @@
 		<PackageReference Include="NJsonSchema" Version="11.0.2" />
 		<PackageReference Include="Defra.Trade.Common.Logging" Version="3.0.1" />
 		<PackageReference Include="Defra.Trade.Common.Functions.Isolated" Version="2.0.0" />
+		<PackageReference Include="Defra.Trade.Common.Function.Health" Version="4.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Defra.Trade.Events.IDCOMS.GCEnricher.Application\Defra.Trade.Events.IDCOMS.GCEnricher.Application.csproj" />
-	  <ProjectReference Include="..\Defra.Trade.Common.Function.Health\Defra.Trade.Common.Function.Health.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
