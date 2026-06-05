@@ -52,9 +52,11 @@ public class QueueClientFactoryTests
     public async Task DisposeAsync_DisposesCleanly()
     {
         var sut = CreateSut();
-        _ = sut.CreateNotifierQueueClient();
+        var sender = sut.CreateNotifierQueueClient();
 
         await sut.DisposeAsync();
+
+        sender.IsClosed.ShouldBeTrue();
     }
 
     [Fact]
@@ -62,6 +64,6 @@ public class QueueClientFactoryTests
     {
         var sut = CreateSut();
 
-        await sut.DisposeAsync();
+        await Should.NotThrowAsync(async () => await sut.DisposeAsync());
     }
 }
