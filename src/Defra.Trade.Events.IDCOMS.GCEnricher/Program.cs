@@ -2,6 +2,9 @@
 // Licensed under the Open Government License v3.0.
 
 using Defra.Trade.Common.AppConfig;
+using Defra.Trade.Common.Config;
+using Defra.Trade.Common.Dynamics.ApiClient;
+using Defra.Trade.Common.Dynamics.ApiClient.Infra;
 using Defra.Trade.Common.Function.Health.Extensions;
 using Defra.Trade.Common.Function.Health.HealthChecks;
 using Defra.Trade.Common.Infra.Infrastructure;
@@ -33,6 +36,11 @@ builder.Services
     .AddApimAuthentication(builder.Configuration.GetSection(InternalApimSettings.SectionName))
     .ConfigureMapper();
 
+builder.Services.AddHttpClient();
+builder.Services.Configure<ApimInternalSettings>(builder.Configuration.GetSection(ApimInternalSettings.OptionsName));
+builder.Services.Configure<DynamicsClientConfig>(builder.Configuration.GetSection(DynamicsClientConfig.SectionName));
+builder.Services.AddTransient<IDynamicsClientAuthenticator, DynamicsClientAuthenticator>();
+
 builder.Services.AddApplicationInsightsTelemetryWorkerService();
 builder.Services.ConfigureFunctionsApplicationInsights();
 
@@ -55,9 +63,15 @@ static void RegisterHealthChecks(
 
     builder.AddDynamicsCheck(sp);
 
-    builder.AddTradeApiHealthCheck(
-        internalApimSettings.Value.DaeraInternalCertificateStoreApiHealthEndpoint,
-        "CertificateStoreApi");
+    var apim = internalApimSettings.Value;
+    var healthEndpoint = apim.DaeraInternalCertificateStoreApiHealthEndpoint ?? string.Empty;
+    // The package's AddTradeApiHealthCheck appends "/health" itself, so strip it from the configured endpoint.
+    var trimmedEndpoint = healthEndpoint.EndsWith("/health", StringComparison.OrdinalIgnoreCase)
+        ? healthEndpoint[..^"/health".Length]
+        : healthEndpoint;
+    var certificateStoreApiPath = $"{apim.BaseUrl}{apim.DaeraInternalCertificateStoreApi}{trimmedEndpoint}";
+
+    builder.AddTradeApiHealthCheck(certificateStoreApiPath, "CertificateStoreApi");
 
     builder.AddAzureServiceBusQueueCheck(serviceBusQueuesSettings.Value, GcEnricherSettings.DefaultQueueName);
     builder.AddAzureServiceBusQueueCheck(serviceBusQueuesSettings.Value, serviceBusQueuesSettings.Value.QueueNameEhcoRemosNotification);
