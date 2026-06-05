@@ -7,7 +7,7 @@ using Azure.Messaging.ServiceBus;
 namespace Defra.Trade.Common.Function.Health.HealthChecks;
 
 /// <summary>
-/// Health check for an Azure Service Bus queue connection.
+/// Health check for he Trade Api Azure Service Bus queue connection.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class ServiceBusQueueHealthCheck : IHealthCheck
