@@ -45,14 +45,13 @@ builder.Services.AddApplicationInsightsTelemetryWorkerService();
 builder.Services.ConfigureFunctionsApplicationInsights();
 
 var healthChecksBuilder = builder.Services.AddHealthChecks();
-RegisterHealthChecks(healthChecksBuilder, builder.Services, builder.Configuration);
+RegisterHealthChecks(healthChecksBuilder, builder.Services);
 
 await builder.Build().RunAsync();
 
 static void RegisterHealthChecks(
     IHealthChecksBuilder builder,
-    IServiceCollection services,
-    IConfiguration configuration)
+    IServiceCollection services)
 {
     builder.AddCheck<AppSettingHealthCheck>("ServiceBus:ConnectionString")
         .AddCheck<AppSettingHealthCheck>("Apim:Internal:BaseUrl");
