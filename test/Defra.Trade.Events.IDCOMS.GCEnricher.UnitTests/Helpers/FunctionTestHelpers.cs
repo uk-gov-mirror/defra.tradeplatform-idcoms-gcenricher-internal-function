@@ -7,8 +7,6 @@ using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Shouldly;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Helpers;

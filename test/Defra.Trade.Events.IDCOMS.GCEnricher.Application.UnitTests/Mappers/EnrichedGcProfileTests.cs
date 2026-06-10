@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Mappers;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Application.UnitTests.Mappers;
 
@@ -26,7 +27,7 @@ public class EnrichedGcProfileTests
                 new GcEnrichedDtoProfile(),
                 new GcEnrichedDataProfile()
             };
-        var config = new MapperConfiguration(cfg => cfg.AddProfiles(profiles));
+        var config = new MapperConfiguration(cfg => cfg.AddProfiles(profiles), NullLoggerFactory.Instance);
         Mapper = config.CreateMapper();
     }
 }
