@@ -67,10 +67,15 @@ public static class ServiceExtensions
         services.AddScoped<IServiceBusManagerClient, ServiceBusManagerClient>();
         services.AddSingleton<IQueueClientFactory, QueueClientFactory>();
 
-        services.AddSingleton(sp =>
+        services.AddSingleton(_ =>
         {
-            var settings = sp.GetRequiredService<IOptions<ServiceBusQueuesSettings>>().Value;
-            return new ServiceBusClient(settings.ConnectionString);
+#if DEBUG
+            string connectionString = configuration.GetValue<string>(GcEnricherSettings.ConnectionStringConfigurationKey);
+            return new ServiceBusClient(connectionString);
+#else
+            string fullyQualifiedNamespace = configuration.GetValue<string>($"{GcEnricherSettings.ConnectionStringConfigurationKey}FQN");
+            return new ServiceBusClient(fullyQualifiedNamespace, new Azure.Identity.DefaultAzureCredential());
+#endif
         });
         services.AddSingleton(_ => new JsonSerializerSettings());
 

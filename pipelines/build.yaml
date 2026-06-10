@@ -51,6 +51,7 @@ extends:
     deployToSecondary: ${{ parameters.deployToSecondary }}
     appName: $(APIName)
     appProject: TRA
+    sbProject: TRE
     appType: 'functionApp'
     appInstanceNumber: $(nc-region-id)02
     scr: GH
@@ -58,8 +59,8 @@ extends:
     publishProject: '**/*Defra.Trade.Events.IDCOMS.GCEnricher.csproj'
     runHealthCheck: false
     appSettingsEnv:
-      dev: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -FUNCTIONS_INPROC_NET8_ENABLED "1"'
-      snd: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -FUNCTIONS_INPROC_NET8_ENABLED "1"' 
-      tst: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -FUNCTIONS_INPROC_NET8_ENABLED "1"'
-      pre: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -FUNCTIONS_INPROC_NET8_ENABLED "1"'
-      prd: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -FUNCTIONS_INPROC_NET8_ENABLED "1"'
+      dev: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -ServiceBus__fullyQualifiedNamespace "$(serviceBusNamespace)" -ServiceBusFQN "$(serviceBusNamespace)"'
+      snd: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -ServiceBus__fullyQualifiedNamespace "$(serviceBusNamespace)" -ServiceBusFQN "$(serviceBusNamespace)"' 
+      tst: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -ServiceBus__fullyQualifiedNamespace "$(serviceBusNamespace)" -ServiceBusFQN "$(serviceBusNamespace)"'
+      pre: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -ServiceBus__fullyQualifiedNamespace "$(serviceBusNamespace)" -ServiceBusFQN "$(serviceBusNamespace)"'
+      prd: '-AzureResourceGroupName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-resourcegroup)1001" -AzureServiceBusName "$(Environment.Name)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001" -ConfigurationServer:Uri "https://$(environment)TRDINFAC1001.azconfig.io" -ServiceBus__fullyQualifiedNamespace "$(serviceBusNamespace)" -ServiceBusFQN "$(serviceBusNamespace)"'

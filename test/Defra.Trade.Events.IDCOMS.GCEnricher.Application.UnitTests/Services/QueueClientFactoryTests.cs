@@ -1,6 +1,7 @@
 // Copyright DEFRA (c). All rights reserved.
 // Licensed under the Open Government License v3.0.
 
+using Azure.Messaging.ServiceBus;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models.Settings;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services;
 using Microsoft.Extensions.Options;
@@ -18,12 +19,12 @@ public class QueueClientFactoryTests
     {
         ConnectionString = FakeConnectionString,
         QueueNameEhcoRemosNotification = QueueName,
-    }));
+    }), new ServiceBusClient(FakeConnectionString));
 
     [Fact]
     public void Ctor_NullSettings_Throws()
     {
-        Should.Throw<ArgumentNullException>(() => new QueueClientFactory(null!));
+        Should.Throw<ArgumentNullException>(() => new QueueClientFactory(null!, new ServiceBusClient(FakeConnectionString)));
     }
 
     [Fact]
