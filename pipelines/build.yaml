@@ -51,6 +51,7 @@ extends:
     deployToSecondary: ${{ parameters.deployToSecondary }}
     appName: $(APIName)
     appProject: TRA
+    sbProject: TRE
     appType: 'functionApp'
     appInstanceNumber: $(nc-region-id)02
     scr: GH
