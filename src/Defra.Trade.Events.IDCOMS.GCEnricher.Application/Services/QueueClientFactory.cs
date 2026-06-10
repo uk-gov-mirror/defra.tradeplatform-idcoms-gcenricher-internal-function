@@ -9,16 +9,15 @@ using Microsoft.Extensions.Options;
 
 namespace Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services;
 
-public class QueueClientFactory(IOptions<ServiceBusQueuesSettings> serviceBusQueuesSettings) : IQueueClientFactory, IAsyncDisposable
+public class QueueClientFactory(IOptions<ServiceBusQueuesSettings> serviceBusQueuesSettings, ServiceBusClient client) : IQueueClientFactory, IAsyncDisposable
 {
     private readonly IOptions<ServiceBusQueuesSettings> _serviceBusQueuesSettings = serviceBusQueuesSettings ?? throw new ArgumentNullException(nameof(serviceBusQueuesSettings));
+    private readonly ServiceBusClient _client = client ?? throw new ArgumentNullException(nameof(client));
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
-    private ServiceBusClient _client;
 
     public ServiceBusSender CreateNotifierQueueClient()
     {
         var settings = _serviceBusQueuesSettings.Value;
-        _client ??= new ServiceBusClient(settings.ConnectionString);
         return _senders.GetOrAdd(settings.QueueNameEhcoRemosNotification, key => _client.CreateSender(key));
     }
 
@@ -27,10 +26,6 @@ public class QueueClientFactory(IOptions<ServiceBusQueuesSettings> serviceBusQue
         foreach (var sender in _senders.Values)
         {
             await sender.DisposeAsync();
-        }
-        if (_client is not null)
-        {
-            await _client.DisposeAsync();
         }
         GC.SuppressFinalize(this);
     }
