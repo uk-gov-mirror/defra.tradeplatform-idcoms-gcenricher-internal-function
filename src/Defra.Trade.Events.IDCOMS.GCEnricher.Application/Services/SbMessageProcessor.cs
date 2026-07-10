@@ -1,15 +1,15 @@
 ﻿// Copyright DEFRA (c). All rights reserved.
 // Licensed under the Open Government License v3.0.
 
-using Defra.Trade.Common.Functions.Extensions;
-using Defra.Trade.Common.Functions.Interfaces;
-using Defra.Trade.Common.Functions.Models;
+using Azure.Messaging.ServiceBus;
+using Defra.Trade.Common.Functions.Isolated.Extensions;
+using Defra.Trade.Common.Functions.Isolated.Interfaces;
+using Defra.Trade.Common.Functions.Isolated.Models;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Config;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Dtos.Inbound;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Extensions;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Models;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Application.Services.Contracts;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using CertificateStoreClient = Defra.Trade.API.CertificatesStore.V1.ApiClient.Client;
 using CrmAdapterClient = Defra.Trade.CrmAdapter.Api.V1.ApiClient.Client;
@@ -61,7 +61,7 @@ public class SbMessageProcessor(
 
             await context.RetryMessage(_messageRetryWindow, _messageRetryEnqueueTime, ex);
         }
-        catch (ServiceBusCommunicationException ex) when (_retry.Context is { } context)
+        catch (ServiceBusException ex) when (_retry.Context is { } context)
         {
             _logger.SendingMessageToNotifierFailure(
                 ex,

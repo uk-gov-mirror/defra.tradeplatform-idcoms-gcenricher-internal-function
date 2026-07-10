@@ -8,10 +8,9 @@ using System.Threading;
 using Defra.Trade.Common.Function.Health;
 using Defra.Trade.Events.IDCOMS.GCEnricher.Functions;
 using Defra.Trade.Events.IDCOMS.GCEnricher.UnitTests.Helpers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Shouldly;
 
@@ -31,18 +30,15 @@ public class HealthCheckFunctionTests
     [Fact]
     public void RunAsync_HasFunctionAttribute()
     {
-        // Arrange & Act
-        var attribute = FunctionTestHelpers.MethodHasSingleAttribute<HealthCheckFunction, FunctionNameAttribute>(
+        var attribute = FunctionTestHelpers.MethodHasSingleAttribute<HealthCheckFunction, FunctionAttribute>(
             nameof(HealthCheckFunction.RunAsync));
 
-        // Assert
         attribute.Name.ShouldBe("HealthCheckFunction");
     }
 
     [Fact]
     public void RunAsync_HasHttpTriggerAttributeWithCorrectValues()
     {
-        // Arrange & Act & Assert
         FunctionTestHelpers.Function_HasHttpTriggerAttributeWithCorrectValues<HealthCheckFunction>(
             nameof(HealthCheckFunction.RunAsync),
             "health",
@@ -53,16 +49,12 @@ public class HealthCheckFunctionTests
     [Fact]
     public async Task RunAsync_ValidHealthCheck_ReturnsOkResponse()
     {
-        // Arrange
-        var body = new MemoryStream(Encoding.UTF8.GetBytes(string.Empty));
-        var req = new FakeHttpRequestData(new Mock<FunctionContext>().Object, new Uri("https://test/api/message"), body);
+        var req = CreateHttpRequest();
         var healthReport = new HealthReport(new Dictionary<string, HealthReportEntry>(), HealthStatus.Healthy, TimeSpan.FromSeconds(1));
         _healthCheckService.Setup(s => s.CheckHealthAsync(null, CancellationToken.None)).ReturnsAsync(healthReport);
 
-        // Act
         var result = await _sut.RunAsync(req);
 
-        // Assert
         result.ShouldNotBeNull();
         var bodyText = result as JsonResult;
         bodyText.ShouldNotBeNull();
@@ -72,16 +64,12 @@ public class HealthCheckFunctionTests
     [Fact]
     public async Task RunAsync_InvalidHealthCheck_ReturnsInternalServerErrorResponse()
     {
-        // Arrange
-        var body = new MemoryStream(Encoding.UTF8.GetBytes(string.Empty));
-        var req = new FakeHttpRequestData(new Mock<FunctionContext>().Object, new Uri("https://test/api/message"), body);
+        var req = CreateHttpRequest();
         var healthReport = new HealthReport(new Dictionary<string, HealthReportEntry>(), HealthStatus.Unhealthy, TimeSpan.FromSeconds(1));
         _healthCheckService.Setup(s => s.CheckHealthAsync(null, CancellationToken.None)).ReturnsAsync(healthReport);
 
-        // Act
         var result = await _sut.RunAsync(req);
 
-        // Assert
         result.ShouldNotBeNull();
         var bodyText = result as JsonResult;
         bodyText.ShouldNotBeNull();
@@ -89,5 +77,12 @@ public class HealthCheckFunctionTests
         var errors = bodyText.Value as HealthCheckResponse;
         errors.ShouldNotBeNull();
         errors.Status.ShouldBe("Unhealthy");
+    }
+
+    private static HttpRequest CreateHttpRequest()
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(string.Empty));
+        return context.Request;
     }
 }

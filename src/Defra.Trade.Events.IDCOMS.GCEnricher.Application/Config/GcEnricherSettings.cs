@@ -38,7 +38,7 @@ public class GcEnricherSettings
     /// </summary>
     public const int DefaultQueueRetryIntervalInSeconds = 30;
 
-    public const string TradeEventInfo = Common.Functions.Constants.QueueName.DefaultEventsInfoQueueName;
+    public const string TradeEventInfo = Common.Functions.Isolated.Constants.QueueName.DefaultEventsInfoQueueName;
 
     public static class MessageRetry
     {
